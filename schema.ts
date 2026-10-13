@@ -112,8 +112,9 @@ export const productsSchema: TableSchema = {
       filter: {
         kind: 'remoteOptions',
         endpoint: '/suppliers',
+        // Filter on the same value the column shows, so the server can match it directly.
         labelField: 'name',
-        valueField: 'id',
+        valueField: 'name',
         multiple: true
       }
     }

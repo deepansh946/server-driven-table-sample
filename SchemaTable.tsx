@@ -47,7 +47,7 @@ function toSearchParams (filters: FilterState, paging: Paging, sort?: Sort) {
 export function SchemaTable ({ tableKey }: { tableKey: string }) {
   const schemaQuery = useTableSchema(tableKey)
   const [filters, setFilters] = useState<FilterState>({})
-  const [paging, setPaging] = useState<Paging>({ current: 1, pageSize: 25 })
+  const [paging, setPaging] = useState<Paging>({ current: 1, pageSize: 10 })
   const [sort, setSort] = useState<Sort>()
 
   const params = toSearchParams(filters, paging, sort)
@@ -84,9 +84,9 @@ export function SchemaTable ({ tableKey }: { tableKey: string }) {
         dataSource={rowsQuery.data?.rows}
         loading={rowsQuery.isFetching}
         pagination={{ ...paging, total: rowsQuery.data?.total }}
-        onChange={(pagination: { current: any; pageSize: any }, nextFilters: any, sorter: any[], { action }: any) => {
+        onChange={(pagination, nextFilters, sorter, { action }) => {
           setFilters(nextFilters)
-          setPaging((prev: { pageSize: any }) => ({
+          setPaging(prev => ({
             // A new filter or sort makes the old page number meaningless.
             current: action === 'paginate' ? pagination.current ?? 1 : 1,
             pageSize: pagination.pageSize ?? prev.pageSize

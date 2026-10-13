@@ -2,6 +2,74 @@
 
 A React + TypeScript pattern where **the backend describes a list page and the frontend renders it**. A new list, or a new column or filter on an existing one, ships with a backend deploy and no frontend release.
 
+**▶ [Open the live demo](https://stackblitz.com/github/deepansh946/server-driven-table-sample)** (runs in your browser, no install needed)
+
+Or run it locally:
+
+```bash
+npm install
+npm run dev
+```
+
+The demo has two tables, Products and Suppliers, rendered by the same `<SchemaTable>` component from two different schemas. A small fake backend running in the browser (`demo/mockApi.ts`) serves the schemas and actually applies filters, sorting and paging, so every control works.
+
+## Quick start
+
+**1. The server sends a schema** (`GET /api/tables/products/schema`):
+
+```json
+{
+  "key": "products",
+  "title": "Product catalog",
+  "columns": {
+    "name":    { "label": "Name",  "type": "text",     "sortable": true, "filter": { "kind": "text" } },
+    "price":   { "label": "Price", "type": "currency", "props": { "currency": "USD" },
+                 "filter": { "kind": "range", "min": 0, "max": 10000 } },
+    "inStock": { "label": "Stock", "type": "badge",
+                 "props": { "colors": { "true": "green", "false": "red" },
+                            "labels": { "true": "In stock", "false": "Sold out" } } }
+  }
+}
+```
+
+**2. Rows come from a separate endpoint** (`GET /api/tables/products?page=1&pageSize=10`):
+
+```json
+{
+  "total": 2,
+  "rows": [
+    { "id": 1, "name": "Mechanical keyboard", "price": 129, "inStock": true },
+    { "id": 2, "name": "4K monitor",          "price": 449, "inStock": false }
+  ]
+}
+```
+
+**3. The frontend needs one line per page:**
+
+```tsx
+<QueryClientProvider client={queryClient}>
+  <SchemaTable tableKey='products' />
+</QueryClientProvider>
+```
+
+**Result:**
+
+```
+Product catalog
+┌─────────────────────────┬────────────┬──────────────┐
+│ Name ↕ 🔍               │ Price  ⏷   │ Stock        │
+├─────────────────────────┼────────────┼──────────────┤
+│ Mechanical keyboard     │ $129.00    │ [In stock]   │  ← green tag
+│ 4K monitor              │ $449.00    │ [Sold out]   │  ← red tag
+└─────────────────────────┴────────────┴──────────────┘
+```
+
+- **Name:** sortable, with a text search box (🔍).
+- **Price:** formatted as currency, with a min/max range filter (⏷).
+- **Stock:** a coloured badge.
+
+To add a "Supplier" column with a dropdown filter, the backend adds one more entry to `columns`. The frontend code doesn't change. See `productsSchema` in `schema.ts` for a fuller example, including a filter whose options come from another endpoint.
+
 ## The pattern
 
 1. **The schema is the contract** (`schema.ts`). For each table the server returns a JSON schema: columns, a cell `type` for each column, and an optional filter spec.
@@ -15,6 +83,17 @@ GET /tables/:key/schema ──► resolveRemoteFilters ──► buildColumns �
                                │ (parallel)              │
                                ▼                         ▼
                         GET /suppliers, ...        cellRegistry[type]
+```
+
+## Project layout
+
+```
+schema.ts          the server/client contract, plus an example schema
+api.ts             fetching, and resolving filter options from other endpoints
+cellRegistry.tsx   cell type → React component
+buildColumns.tsx   schema → antd columns and filters (pure function)
+SchemaTable.tsx    the generic table component
+demo/              runnable demo only: fake API, sample data, entry point
 ```
 
 ## Trade-offs
